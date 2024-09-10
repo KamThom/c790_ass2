@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ass2: Simple Game Engine</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; background: black; }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvass"></canvas>
+
+    <script>
+        const canvas = document.getElementById("myCanvass");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let stars = [];
+        let numStars = 100;
+
+        //ran stars
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3,
+                speed: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        const spaceship = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 50,
+            height: 80,
+            angle: 0,             
+            thrusterAngle: 0,      
+            speedX: 0,              
+            speedY: 0,             
+            thrusterActive: false,  
+            thrusterPower: 0.1,   
+            rotationSpeed: 0.01     
+        };
+
+        function drawStars() {
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < stars.length; i++) {
+                let star = stars[i];
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            }
+        }
+
+        function drawSpaceship() {
+            ctx.save();
+            ctx.translate(spaceship.x, spaceship.y);
+            ctx.rotate(spaceship.angle);
+
+            //body
+            ctx.fillStyle = 'gray';
+            ctx.fillRect(-spaceship.width / 2, -spaceship.height / 2, spaceship.width, spaceship.height);
+
+            drawViewport();
+            makePointy();
+
+            // thrusters
+            ctx.save();//left thrust
+            ctx.translate(-spaceship.width / 2, spaceship.height / 2); 
+            ctx.rotate(spaceship.thrusterAngle);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(-10, 0, 20, 30); 
+            if (spaceship.thrusterActive) {
+                drawRocketBlast();
+            }
+            ctx.restore();
+
+            ctx.save(); //right thrust
+            ctx.translate(spaceship.width / 2, spaceship.height / 2); 
+            ctx.rotate(-spaceship.thrusterAngle);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(-10, 0, 20, 30);
+            if (spaceship.thrusterActive) {
+                drawRocketBlast();
+            }
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function drawViewport() {
+            ctx.fillStyle = 'lightblue';
+            ctx.beginPath();
+            ctx.arc(0, -spaceship.height / 4, 15, 0, Math.PI * 2); 
+            ctx.fill();
+
+            ctx.strokeStyle = 'white';  //border
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function makePointy() {
+            ctx.beginPath();
+            ctx.moveTo(0, -spaceship.height / 2 - 18);
+            ctx.lineTo(-spaceship.width / 2, -spaceship.height / 2);
+            ctx.lineTo(spaceship.width / 2, -spaceship.height / 2);
+            ctx.closePath();
+
+            ctx.fillStyle = 'red';
+            ctx.fill();
+        }
+
+        function drawRocketBlast() {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.moveTo(-5, 30);
+            ctx.lineTo(5, 30);
+            ctx.lineTo(0, 50);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function updateSpaceship() {
+            spaceship.angle += spaceship.rotationSpeed; // body rotate/wiggle
+
+            spaceship.thrusterAngle = Math.sin(Date.now() / 300) * 0.2; // wiggle thrusts
+
+            if (Math.random() < 0.05) { //ran activate thrust
+                spaceship.thrusterActive = true;
+                let forceX = Math.sin(spaceship.angle) * spaceship.thrusterPower;
+                let forceY = -Math.cos(spaceship.angle) * spaceship.thrusterPower;
+                spaceship.speedX += forceX;
+                spaceship.speedY += forceY;
+            } else {
+                spaceship.thrusterActive = false;
+            }
+
+            spaceship.x += spaceship.speedX;
+            spaceship.y += spaceship.speedY;
+
+            if (spaceship.x < 0) spaceship.x = canvas.width;//wrap
+            if (spaceship.x > canvas.width) spaceship.x = 0;
+            if (spaceship.y < 0) spaceship.y = canvas.height;
+            if (spaceship.y > canvas.height) spaceship.y = 0;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawStars();
+            drawSpaceship();
+            updateSpaceship();
+            requestAnimationFrame(animate);
+        }
+
+        //TODO: add player input
+
+        animate();
+    </script>
+</body>
+</html>
